@@ -18,7 +18,6 @@ Generated: 2026-02-06
 
 | ID | Title | Complexity | Priority | Blocked By |
 | --- | --- | --- | --- | --- |
-| [ISSUE-1](./ISSUE-1/issue.md) | Seed repo with AI workflow starter | medium | medium | |
 
 ### Review
 
@@ -29,3 +28,4 @@ Generated: 2026-02-06
 
 | ID | Title | Completed |
 | --- | --- | --- |
+| [ISSUE-1](./ISSUE-1/issue.md) | Seed repo with AI workflow starter | 2026-02-06 |

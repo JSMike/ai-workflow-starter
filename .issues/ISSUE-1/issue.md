@@ -3,7 +3,7 @@
 <!-- Metadata -->
 | Field        | Value        |
 |--------------|--------------|
-| Status       | backlog      |
+| Status       | done         |
 | Owner        | TBD          |
 | Complexity   | medium       |
 | Created      | 2026-02-06   |
