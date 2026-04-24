@@ -24,23 +24,27 @@ Initialize the `.issues/` folder structure in a new project.
 
 This folder contains issue tracking for the repository. Each issue has its own folder with documentation.
 
+Canonical workflow rules live in `../AGENTS.md`. Keep this file focused on `.issues/` folder conventions.
+
 ## Structure
 
 Each `ISSUE-N/` folder contains:
 - `issue.md` - Requirements and metadata (always present)
 - `plan.md` - Implementation approach (created when planning)
-- `summary-1.md`, `summary-2.md`, ... - Session progress records (created per work session)
-- `summary.md` - Final completion record (created when done)
+- `session-log.md` - Append-only session progress records
+- `qa-instructions.md` - Step-by-step human validation guide (created when moving to review)
+- `summary.md` - Final completion record (created after verification)
 
 ## Status Values
 
 | Status | Meaning |
 |--------|---------|
-| backlog | Not yet ready to work |
-| ready | Ready to work, dependencies met |
+| idea | Captured thought, exploration, or vague request; not yet scoped |
+| backlog | Scoped but not ready to work |
+| ready | Ready to work, dependencies met, acceptance criteria clear |
 | in-progress | Currently being worked on |
-| review | Work complete, pending verification |
-| done | Completed and accepted |
+| review | Implementation complete, awaiting verification |
+| done | Verified working and accepted |
 
 ## Metadata Fields
 
@@ -59,37 +63,53 @@ Each `ISSUE-N/` folder contains:
 
 Use `/issue <action>` to manage issues:
 - `init` - Initialize this folder structure
-- `create <title>` - Create new issue and enter plan mode
+- `create <title>` - Create new issue
 - `match <description>` - Find existing issues matching a description
 - `work <id>` - Start working on an issue
 - `list [status]` - Show issues
 - `show <id>` - Display issue details
 - `status <id> <status>` - Update status
 - `plan <id>` - Create/update plan
-- `session <id>` - Record session progress (run at end of each work session)
-- `done <id>` - Mark complete with comprehensive summary
+- `session <id>` - Append session progress (run at end of each work session or before handoff)
+- `done <id>` - Mark verified work complete with comprehensive summary
 - `delete <id>` - Remove issue
 - `index` - Regenerate index.md
 
 ## Lifecycle
 
-1. Create issue with `/issue create`
-2. Plan implementation, add plan.md
-3. Work on issue, update status to `in-progress`
-4. **After ANY work on an issue, run `/issue session` to record progress** (mandatory)
-5. When complete, run `/issue done` for final summary
-6. After PR merge, run `/issue delete`
+1. Clarify vague requests before creating implementation-ready issues
+2. Create issue with `/issue create`
+3. Plan implementation, add plan.md
+4. Work on issue, update status to `in-progress`
+5. **After each work session or before handoff, run `/issue session` to append progress to `session-log.md`** (mandatory)
+6. When implementation is complete, create `qa-instructions.md` and set status to `review`
+7. After verification, run `/issue done` for final summary
+8. After PR merge, run `/issue delete`
 
-**Important:** Session summaries are mandatory after every unit of work, not optional. This includes creating issues, updating plans, or any modifications. The audit trail depends on consistent session recording.
+**Important:** Session log entries are mandatory for each work session or handoff point, not optional. One entry can cover multiple related edits in the same uninterrupted work session. The audit trail depends on consistent session recording.
+
+## Session Log Template
+
+Append each work session to `ISSUE-N/session-log.md` using this structure:
+
+- `# Session N`
+- `**Date:** YYYY-MM-DD`
+- `**Prompt/Ask:**` Briefly state the user request that triggered this work.
+- `## Completed`
+- `## Current Status`
+- `## Plan Coverage`
+- `## Files Changed`
+- `## Verification`
+- `## Next Steps`
 ```
 
 ---
 
 ### create <title>
 
-Create a new issue folder with issue.md template, then enter plan mode.
+Create a new issue folder with issue.md template.
 
-**This is the recommended way to start new work** - it ensures all planning and decisions are captured in the issue folder for audit purposes.
+**Clarify vague requests first.** Use `idea` for exploratory or underspecified requests, and only move issues to `ready` or `in-progress` once requirements are clear enough to plan responsibly.
 
 1. Find the next available ISSUE-N number by scanning existing folders
 2. Create `.issues/ISSUE-N/` directory
@@ -101,7 +121,7 @@ Create a new issue folder with issue.md template, then enter plan mode.
 <!-- Metadata -->
 | Field        | Value                              |
 |--------------|-------------------------------------|
-| Status       | backlog                             |
+| Status       | idea                                |
 | Owner        | TBD                                 |
 | Created      | <today's date YYYY-MM-DD>           |
 | Source       |                                     |
@@ -113,8 +133,17 @@ Create a new issue folder with issue.md template, then enter plan mode.
 ## Summary
 <describe what needs to be done>
 
+## Prompt
+<original request, if available>
+
 ## Context
 <background information>
+
+## Requirements Readiness
+- [ ] Goal is clear
+- [ ] Constraints are documented
+- [ ] Acceptance criteria are testable
+- [ ] Open questions are resolved or captured
 
 ## Acceptance Criteria
 - [ ] Criterion 1
@@ -127,7 +156,7 @@ Create a new issue folder with issue.md template, then enter plan mode.
 ```
 
 4. Display the created issue path
-5. **Enter plan mode** with plan file at `.issues/ISSUE-N/plan.md`
+5. Create or update `.issues/ISSUE-N/plan.md` once the issue is clear enough to plan
    - All planning work is captured in the issue folder
    - This becomes the complete audit trail
 
@@ -165,7 +194,7 @@ Start working on an existing issue.
 1. Read `.issues/<id>/issue.md` and display acceptance criteria
 2. If status is `ready`, update to `in-progress`
 3. If status is `in-progress`, show current progress from plan.md
-4. Display reminder: "When complete, run `/issue done <id>`"
+4. Display reminder: "When implementation is complete, set status to `review`; run `/issue done <id>` only after verification"
 5. If plan.md doesn't exist, offer to enter plan mode
 
 This action helps agents pick up existing work rather than starting fresh.
@@ -198,7 +227,7 @@ Show issues, optionally filtered by status.
 Display full details of an issue.
 
 1. Read `.issues/<id>/issue.md`
-2. If exists, also summarize `plan.md` and `summary.md`
+2. If exists, also summarize `plan.md`, `session-log.md`, and `summary.md`
 3. Display the content
 
 ---
@@ -208,9 +237,35 @@ Display full details of an issue.
 Update the status field of an issue.
 
 1. Read `.issues/<id>/issue.md`
-2. Update the Status field in the metadata table
-3. Valid statuses: backlog, ready, in-progress, review, done
-4. Save the file
+2. If `<new-status>` is `review`, create or update `.issues/<id>/qa-instructions.md` before changing the status
+3. Update the Status field in the metadata table
+4. Valid statuses: idea, backlog, ready, in-progress, review, done
+5. Save the file
+
+When moving to `review`, `qa-instructions.md` must include:
+
+```markdown
+# QA Instructions: <id> - <title from issue.md>
+
+## What Changed
+- <Brief summary of completed work>
+
+## Preconditions
+- <Environment, data, accounts, feature flags, or setup needed>
+
+## Validation Steps
+1. <Step-by-step human validation action>
+2. <Expected result>
+
+## Acceptance Criteria
+- [ ] <Criterion or behavior to confirm>
+
+## Regression Checks
+- [ ] <Important adjacent behavior to re-check>
+
+## Notes
+- <Known limitations, risks, or follow-up context>
+```
 
 ---
 
@@ -254,7 +309,9 @@ Create or update plan.md for an issue.
 
 ### done <id>
 
-Mark issue as complete with a **comprehensive summary** that serves as the audit record.
+Mark a verified issue as complete with a **comprehensive summary** that serves as the audit record.
+
+Only run this after user confirmation, human QA, CI accepted by the user, or another explicit review signal outside the implementing agent's own confidence.
 
 **Important:** The summary.md becomes the permanent record of what was actually done. It should be detailed enough for non-technical stakeholders to understand the work completed.
 
@@ -305,13 +362,15 @@ Mark issue as complete with a **comprehensive summary** that serves as the audit
 
 Record progress after completing work on an issue. **This is mandatory after any work** - creating issues, updating plans, implementing changes, or any other modifications. Never skip this step.
 
-1. Find the next session number by scanning existing `summary-N.md` files in `.issues/<id>/`
-2. Create `.issues/<id>/summary-N.md` with:
+1. Find the next session number by scanning existing `# Session N` headings in `.issues/<id>/session-log.md`; if the file does not exist, start at Session 1
+2. Append this entry to `.issues/<id>/session-log.md`:
 
 ```markdown
 # Session N
 
 **Date:** <today's date YYYY-MM-DD>
+
+**Prompt/Ask:** <briefly state the user request that triggered this work>
 
 ## Completed
 - <What was accomplished in this session>
@@ -323,17 +382,24 @@ Record progress after completing work on an issue. **This is mandatory after any
 - <What acceptance criteria are complete>
 - <Any blockers or concerns>
 
+## Plan Coverage
+- <Plan items addressed in this session, if applicable>
+
 ## Files Changed
 - `path/to/file.ts` - <description of changes>
 - `path/to/file.scss` - <description of changes>
+
+## Verification
+- <How to verify the changes work>
+- <Commands run, behaviors checked, expected outcomes>
 
 ## Next Steps
 - <What remains to be done>
 - <Recommended next actions>
 ```
 
-3. Display confirmation with session file path
-4. Remind: "Run `/issue done <id>` when all work is complete"
+3. Display confirmation with `session-log.md` path
+4. Remind: "Set status to `review` when implementation is complete; run `/issue done <id>` only after verification"
 
 ---
 
